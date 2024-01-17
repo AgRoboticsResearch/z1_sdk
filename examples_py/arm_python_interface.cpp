@@ -8,10 +8,10 @@ using namespace UNITREE_ARM;
 class ArmInterface : public unitreeArm
 {
 public:
-    ArmInterface(bool hasGripper):unitreeArm(hasGripper){};
+    ArmInterface(bool hasGripper) : unitreeArm(hasGripper){};
     ~ArmInterface(){};
-    void loopOn() { sendRecvThread->start();}
-    void loopOff() { sendRecvThread->shutdown();}
+    void loopOn() { sendRecvThread->start(); }
+    void loopOff() { sendRecvThread->shutdown(); }
     void setFsmLowcmd()
     {
         sendRecvThread->start();
@@ -26,7 +26,8 @@ public:
 };
 
 namespace py = pybind11;
-PYBIND11_MODULE(unitree_arm_interface, m){
+PYBIND11_MODULE(z1_arm_interface, m)
+{
     using rvp = py::return_value_policy;
 
     m.def("postureToHomo", &postureToHomo);
@@ -45,48 +46,44 @@ PYBIND11_MODULE(unitree_arm_interface, m){
         .value("TOSTATE", ArmFSMState::TOSTATE)
         .value("SAVESTATE", ArmFSMState::SAVESTATE)
         .value("TRAJECTORY", ArmFSMState::TRAJECTORY)
-        .value("LOWCMD", ArmFSMState::LOWCMD)
-        ;
+        .value("LOWCMD", ArmFSMState::LOWCMD);
 
     py::class_<LowlevelState>(m, "LowlevelState")
         .def("getQ", &LowlevelState::getQ, rvp::reference_internal)
         .def("getQd", &LowlevelState::getQd, rvp::reference_internal)
         .def("getQdd", &LowlevelState::getQdd, rvp::reference_internal)
-        .def("getQTau", &LowlevelState::getTau, rvp::reference_internal)
-        ;
+        .def("getQTau", &LowlevelState::getTau, rvp::reference_internal);
 
     py::class_<CtrlComponents>(m, "CtrlComponents")
         .def_readwrite("armModel", &CtrlComponents::armModel)
-        .def_readonly("dt", &CtrlComponents::dt)
-        ;
+        .def_readonly("dt", &CtrlComponents::dt);
 
     py::class_<Z1Model>(m, "Z1Model")
         .def(py::init<Vec3, double, Vec3, Mat3>())
         .def("checkInSingularity", &Z1Model::checkInSingularity)
-        .def("jointProtect", [](Z1Model& self, Vec6 q, Vec6 qd){
+        .def("jointProtect", [](Z1Model &self, Vec6 q, Vec6 qd)
+             {
             self.jointProtect(q, qd);
-            return std::make_pair(q, qd);
-        })
+            return std::make_pair(q, qd); })
         .def("getJointQMax", &Z1Model::getJointQMax, rvp::reference_internal)
         .def("getJointQMin", &Z1Model::getJointQMin, rvp::reference_internal)
         .def("getJointSpeedMax", &Z1Model::getJointSpeedMax, rvp::reference_internal)
-        .def("inverseKinematics", [](Z1Model& self, HomoMat Tdes, Vec6 qPast, bool checkInWorkSpace){
+        .def("inverseKinematics", [](Z1Model &self, HomoMat Tdes, Vec6 qPast, bool checkInWorkSpace)
+             {
             Vec6 q_result;
             bool hasIK = self.inverseKinematics(Tdes, qPast, q_result, checkInWorkSpace);
-            return std::make_pair(hasIK, q_result);
-        })
+            return std::make_pair(hasIK, q_result); })
         .def("forwardKinematics", &Z1Model::forwardKinematics)
         .def("inverseDynamics", &Z1Model::inverseDynamics)
         .def("CalcJacobian", &Z1Model::CalcJacobian)
-        .def("solveQP", [](Z1Model& self, Vec6 twist, Vec6 qPast, double dt){
+        .def("solveQP", [](Z1Model &self, Vec6 twist, Vec6 qPast, double dt)
+             {
             Vec6 qd_result;
             self.solveQP(twist, qPast, qd_result, dt);
-            return qd_result;
-        })
-        ;
+            return qd_result; });
 
     py::class_<ArmInterface>(m, "ArmInterface")
-        .def(py::init<bool>(), py::arg("hasGripper")=true)
+        .def(py::init<bool>(), py::arg("hasGripper") = true)
         .def_readwrite("q", &ArmInterface::q)
         .def_readwrite("qd", &ArmInterface::qd)
         .def_readwrite("tau", &ArmInterface::tau)
@@ -118,6 +115,5 @@ PYBIND11_MODULE(unitree_arm_interface, m){
         .def("jointCtrlCmd", &ArmInterface::jointCtrlCmd)
         .def("cartesianCtrlCmd", &ArmInterface::cartesianCtrlCmd)
         .def("setArmCmd", &ArmInterface::setArmCmd)
-        .def("setGripperCmd", &ArmInterface::setGripperCmd)
-        ;
+        .def("setGripperCmd", &ArmInterface::setGripperCmd);
 }
